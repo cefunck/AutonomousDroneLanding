@@ -13,7 +13,6 @@ from pyparrot.DroneVision import DroneVision
 import threading
 import cv2
 import time
-import numpy as np
 ########################################################
 
 
@@ -68,30 +67,18 @@ else:
 
 timer = Timer()
 
-
-
 ########################################################################################
 class UserVision:
-
     def __init__(self, vision):
         self.index = 0
         self.vision = vision
-        self.target = False
-        self.targetPoint = np.array([0,0])
-        self.sourceImageCenterPoint =  np.array([0,0])
-        self.targetArea = 0
-        self.frameArea = 0
-
-
-    def get_target(self):
-        return self.target
 
     def save_pictures(self, args):
         print("in save pictures on image %d " % self.index)
 
         orig_image = self.vision.get_latest_valid_picture()
-        self.sourceImageCenterPoint = np.array(orig_image.shape[0]/2, orig_image.shape[1]/2)
-        self.frameArea = orig_image[0]*orig_image[1]
+
+
 
         if (orig_image is not None):
 
@@ -111,23 +98,13 @@ class UserVision:
                             (255, 0, 255),
                             2)  # line type
 
-
-
-                # labels : 9:silla  ,20: monitor    ; 8: gato
-                if (labels[i].data.cpu().numpy() == 20):
-                    print(box.data.cpu().numpy())
-                    print(box)
-                    numpyBox = box.data.cpu().numpy()
-                    puntoMedio = np.array([box[2] - box[0], box[3] - box[1]])
-                    self.targetPoint = puntoMedio
-                    area = np.array(np.abs((box[0] - box[2]) * (box[3] - box[1])))
-                    self.targetArea = area
-                    self.target = True
-                    print(puntoMedio)
-                    print(area)
+                if (label == 'chair'):
+                    print('Aqui hay una silla')
 
 
             cv2.imshow('Imagen con objetos detectados', orig_image)
+
+
 
             cv2.waitKey(1)
             self.index += 1
@@ -135,42 +112,6 @@ class UserVision:
 
 
 mamboAddr = "e0:14:d0:63:3d:d0"
-
-
-
-
-
-def rotationalSearch():
-    while (True):
-        mambo.fly_direct(roll=0, pitch=0, yaw=15, vertical_movement=0, duration=1)
-        mambo.smart_sleep(5)
-        if userVision.target:
-            break
-
-
-def alinearTarget():
-    while (True):
-        if not userVision.target:
-            break
-        distanciaX = userVision.sourceImageCenterPoint[0] - userVision.targetPoint[0]
-        distanciaY = userVision.sourceImageCenterPoint[1] - userVision.targetPoint[1]
-        yaw = 0
-        verticalMovement = 0
-        if (distanciaX < 0):
-            yaw = 15
-        else:
-            yaw = -15
-        if distanciaY < 0:
-            verticalMovement = -3
-        else:
-            verticalMovement = 3
-        mambo.fly_direct(roll=0, pitch=0, yaw=yaw, vertical_movement=verticalMovement, duration=1)
-        mambo.smart_sleep(5)
-        if userVision.target and ((np.linalg.norm(np.substract(self.sourceImageCenterPoint, self.targetPoint)))< 180):
-            break
-
-def avanzar():
-    mambo.fly_direct(roll=0, pitch=15, yaw=0, vertical_movement=0, duration=1)
 
 mambo = Mambo(mamboAddr, use_wifi=True)
 print("trying to connect to mambo now")
@@ -206,24 +147,6 @@ if (success):
             print("flying state is %s" % mambo.sensors.flying_state)
             print("Flying direct: going up")
             mambo.fly_direct(roll=0, pitch=0, yaw=0, vertical_movement=20, duration=1)
-            terminar = False
-
-            rotationalSearch()
-            '''
-            while not userVision.target and not terminar:
-                rotationalSearch()
-                while userVision.target:
-                    alinearTarget()
-                    avanzar()
-                    if userVision.targetArea / userVision.frameArea <= 0.5:
-                        terminar = True
-                        break
-
-            '''
-            '''
-            print("flying state is %s" % mambo.sensors.flying_state)
-            print("Flying direct: going up")
-            mambo.fly_direct(roll=0, pitch=0, yaw=0, vertical_movement=20, duration=1)
 
             print("flip left")
             print("flying state is %s" % mambo.sensors.flying_state)
@@ -247,7 +170,6 @@ if (success):
             print("flying state is %s" % mambo.sensors.flying_state)
             success = mambo.flip(direction="back")
             print("mambo flip result %s" % success)
-            '''
             mambo.smart_sleep(5)
 
             print("landing")
