@@ -101,10 +101,7 @@ class UserVision:
                 if (label == 'chair'):
                     print('Aqui hay una silla')
 
-
             cv2.imshow('Imagen con objetos detectados', orig_image)
-
-
 
             cv2.waitKey(1)
             self.index += 1
@@ -141,10 +138,12 @@ if (success):
         mambo.smart_sleep(2)
 
         print("taking off!")
-        mambo.safe_takeoff(5)
+        #mambo.safe_takeoff(5)
 
         if (mambo.sensors.flying_state != "emergency"):
             print("flying state is %s" % mambo.sensors.flying_state)
+
+            '''
             print("Flying direct: going up")
             mambo.fly_direct(roll=0, pitch=0, yaw=0, vertical_movement=20, duration=1)
 
@@ -174,8 +173,10 @@ if (success):
 
             print("landing")
             print("flying state is %s" % mambo.sensors.flying_state)
+           
             mambo.safe_land(5)
-            mambo.smart_sleep(5)
+           '''
+            mambo.smart_sleep(15)
 
         print("Ending the sleep and vision")
         cv2.destroyAllWindows()
