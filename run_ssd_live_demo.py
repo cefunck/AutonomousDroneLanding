@@ -4,6 +4,7 @@ from vision.ssd.mobilenetv1_ssd_lite import create_mobilenetv1_ssd_lite, create_
 from vision.ssd.squeezenet_ssd_lite import create_squeezenet_ssd_lite, create_squeezenet_ssd_lite_predictor
 from vision.ssd.mobilenet_v2_ssd_lite import create_mobilenetv2_ssd_lite, create_mobilenetv2_ssd_lite_predictor
 from vision.utils.misc import Timer
+import random
 import cv2
 import sys
 
@@ -16,10 +17,11 @@ import time
 import numpy as np
 ########################################################
 
-STATE_SEARCH = 'Search'
-STATE_ALIGNMENT = 'Alignment'
+STATE_SEARCH = 'Searching'
+STATE_ALIGNMENT = 'Aligning'
 STATE_MOVING = 'Moving'
 STATE_LANDING = 'Landing'
+STATE_EXPLORING = 'Exploring'
 
 if len(sys.argv) < 4:
     print('Usage: python run_ssd_example.py <net type>  <model path> <label path> [video file]')
@@ -80,7 +82,7 @@ class UserVision:
     def __init__(self, vision):
         #self.index = 0
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        self.out = cv2.VideoWriter('video_output', fourcc, 60, 640, 360)
+        #self.out = cv2.VideoWriter('video_output.avi', fourcc, 15, (640, 360))
         self.vision = vision
         self.target = False
         self.targetPoint = np.array([0, 0])
@@ -90,6 +92,7 @@ class UserVision:
         self.alignmentTolerance = 90
         self.state = STATE_SEARCH
         self.terminar = False
+
 
     # Funcion para obtener el objetivo de aterrizaje
     def get_target(self):
@@ -153,11 +156,24 @@ class UserVision:
                         1,  # font scale
                         (0, 255, 0),
                         2)  # line type
+            
+            cv2.putText(orig_image, 'target: ' + str(self.target),
+                        (340, 340),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,  # font scale
+                        (0, 255, 0),
+                        2)  # line type
+            cv2.putText(orig_image, 'terminar: ' + str(self.terminar),
+                        (0, 0),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,  # font scale
+                        (0, 255, 0),
+                        2)  # line type
 
             if self.target:
                 cv2.circle(orig_image, (self.targetPoint[0], self.targetPoint[1]), 5, (0, 0, 255), -2)
 
-            self.out.write(orig_image)
+            #self.out.write(orig_image)
             cv2.imshow('Imagen con objetos detectados', orig_image)
 
             cv2.waitKey(1)
@@ -168,17 +184,27 @@ class UserVision:
 mamboAddr = "e0:14:d0:63:3d:d0"
 
 def rotationalSearch():
+    iteration_counter = 0
     userVision.state = STATE_SEARCH
     if not userVision.target:
         mambo.fly_direct(roll=0, pitch=0, yaw=-15, vertical_movement=0, duration=1)
-    while (not userVision.target):
+    while (not userVision.target or iteration_counter >= 16):
         mambo.smart_sleep(2)
         print('Estado de busqueda')
         print('Objetivo Encontrado: {}', userVision.target)
         print('Ubicacion objetivo de aterrizaje: {}'.format(userVision.targetPoint))
         # print('Ubicacion centro de la Imagen: {}'.format(userVision.sourceImageCenterPoint))
         mambo.fly_direct(roll=0, pitch=0, yaw=15, vertical_movement=0, duration=1)
+        iteration_counter += 1
 
+def explore():
+    userVision.state = STATE_EXPLORING
+    yaw = random.randint(-100,100)
+    pitch = 15
+    mambo.fly_direct(roll=0, pitch=0, yaw=yaw, vertical_movement=0, duration=1)
+    mambo.smart_sleep(2)
+    mambo.fly_direct(roll=0, pitch=pitch, yaw=0, vertical_movement=0, duration=2)
+    mambo.smart_sleep(3)
 
 
 def alinearTarget():
@@ -250,6 +276,8 @@ if (success):
 
             while not userVision.terminar:
                 rotationalSearch()
+                if not uservision.target:
+                    explore()
                 while userVision.target and not userVision.terminar:
                     alinearTarget()
                     if not userVision.target:
@@ -296,7 +324,7 @@ if (success):
         print("Ending the sleep and vision")
         cv2.destroyAllWindows()
         mamboVision.close_video()
-        userVision.out.release()
+        #userVision.out.release()
         mambo.smart_sleep(5)
 
 
