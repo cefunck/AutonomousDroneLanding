@@ -79,6 +79,8 @@ class UserVision:
 
     def __init__(self, vision):
         #self.index = 0
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        self.out = cv2.VideoWriter('video_output', fourcc, 60, 640, 360)
         self.vision = vision
         self.target = False
         self.targetPoint = np.array([0, 0])
@@ -155,6 +157,7 @@ class UserVision:
             if self.target:
                 cv2.circle(orig_image, (self.targetPoint[0], self.targetPoint[1]), 5, (0, 0, 255), -2)
 
+            self.out.write(orig_image)
             cv2.imshow('Imagen con objetos detectados', orig_image)
 
             cv2.waitKey(1)
@@ -293,6 +296,7 @@ if (success):
         print("Ending the sleep and vision")
         cv2.destroyAllWindows()
         mamboVision.close_video()
+        userVision.out.release()
         mambo.smart_sleep(5)
 
 
