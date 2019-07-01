@@ -158,13 +158,13 @@ class UserVision:
                         2)  # line type
             
             cv2.putText(orig_image, 'target: ' + str(self.target),
-                        (340, 340),
+                        (500, 340),
                         cv2.FONT_HERSHEY_SIMPLEX,
                         0.5,  # font scale
                         (0, 255, 0),
                         2)  # line type
             cv2.putText(orig_image, 'terminar: ' + str(self.terminar),
-                        (0, 0),
+                        (0, 20),
                         cv2.FONT_HERSHEY_SIMPLEX,
                         0.5,  # font scale
                         (0, 255, 0),
@@ -184,18 +184,16 @@ class UserVision:
 mamboAddr = "e0:14:d0:63:3d:d0"
 
 def rotationalSearch():
-    iteration_counter = 0
     userVision.state = STATE_SEARCH
     if not userVision.target:
-        mambo.fly_direct(roll=0, pitch=0, yaw=-15, vertical_movement=0, duration=1)
-    while (not userVision.target or iteration_counter >= 16):
+        mambo.fly_direct(roll=0, pitch=0, yaw=-30, vertical_movement=0, duration=1)
+    while (not userVision.target):
         mambo.smart_sleep(2)
         print('Estado de busqueda')
         print('Objetivo Encontrado: {}', userVision.target)
         print('Ubicacion objetivo de aterrizaje: {}'.format(userVision.targetPoint))
         # print('Ubicacion centro de la Imagen: {}'.format(userVision.sourceImageCenterPoint))
-        mambo.fly_direct(roll=0, pitch=0, yaw=15, vertical_movement=0, duration=1)
-        iteration_counter += 1
+        mambo.fly_direct(roll=0, pitch=0, yaw=30, vertical_movement=0, duration=1)
 
 def explore():
     userVision.state = STATE_EXPLORING
@@ -230,9 +228,13 @@ def alinearTarget():
         mambo.smart_sleep(2)
 
 def avanzar():
+    pitch = 15
+    if userVision.targetArea > 0:
+        target_area_ratio = userVision.targetArea/(640*360)
+        pitch = int(2.0/target_area_ratio)
     print('Avanzando hacia el objetivo')
     userVision.state = STATE_MOVING
-    mambo.fly_direct(roll=0, pitch=15, yaw=0, vertical_movement=0, duration=1)
+    mambo.fly_direct(roll=0, pitch=pitch , yaw=0, vertical_movement=0, duration=1)
     mambo.smart_sleep(2)
 
 mambo = Mambo(mamboAddr, use_wifi=True)
@@ -276,8 +278,8 @@ if (success):
 
             while not userVision.terminar:
                 rotationalSearch()
-                if not uservision.target:
-                    explore()
+                #if not uservision.target:
+                    #explore()
                 while userVision.target and not userVision.terminar:
                     alinearTarget()
                     if not userVision.target:
